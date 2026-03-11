@@ -3,7 +3,7 @@ import "dotenv/config";
 import cors from "cors";
 import connectDB from './configs/db.js';
 import { clerkMiddleware } from '@clerk/express'
-import clerkWebhook from "./controllers/clerkWebhook.js"; // ✅ File name ke according import karo
+import clerkWebhooks from "./controllers/clerkWebhooks.js";  // ✅ Perfect match
 
 connectDB();
 
