@@ -3,7 +3,7 @@ import "dotenv/config";
 import cors from "cors";
 import connectDB from './configs/db.js';
 import { clerkMiddleware } from '@clerk/express'
-import clerkWebhooks from "./controllers/clerkWebhooks.js";  // ✅ Perfect match
+import clerkWebhooks from "./controllers/clerkWebhooks.js";  // ✅ Import with correct name
 
 connectDB();
 
@@ -12,10 +12,12 @@ app.use(cors());
 app.use(express.json());
 app.use(clerkMiddleware());
 
-// 5:52:23 - Isko hata do agar comment nahi hai to
-app.use("/api/clerk", clerkWebhook); // ✅ Consistent name use karo
+// Use the imported variable - Line 16
+app.use("/api/clerk", clerkWebhooks);  // ✅ Use clerkWebhooks, not clerkWebhook
 
 app.get('/', (req, res) => res.send("API WORKING"));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`SERVER RUNNING ON PORT ${PORT}`));
+
+export default app;
