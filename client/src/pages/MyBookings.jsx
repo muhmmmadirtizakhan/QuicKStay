@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Title from '../components/Title'
 import { assets } from '../assets/assets'
 import { useAppContext } from '../context/AppContext'
@@ -9,6 +10,8 @@ import { getProfessionalAddress } from '../utils/addressMap'
 const MyBookings = () => {
   const { axios, getToken, user } = useAppContext();
   const [bookings, setBookings] = useState([])
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   
   const fetchUserBookings = async () => {
     try {
@@ -52,10 +55,41 @@ const MyBookings = () => {
   }
 
   useEffect(() => {
-    if (user) {
-      fetchUserBookings()
+    const verifyStripePayment = async (sessionId) => {
+      try {
+        const token = await getToken();
+        const { data } = await axios.get(
+          `/api/bookings/stripe-success?session_id=${sessionId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+        if (data.success) {
+          toast.success(data.message || 'Payment successful')
+          await fetchUserBookings()
+        } else {
+          toast.error(data.message || 'Payment verification failed')
+        }
+      } catch (error) {
+        toast.error(error.response?.data?.message || error.message)
+      } finally {
+        navigate('/my-bookings', { replace: true })
+      }
     }
-  }, [user])
+
+    if (user) {
+      const sessionId = searchParams.get('session_id')
+      const canceled = searchParams.get('canceled')
+
+      if (sessionId) {
+        verifyStripePayment(sessionId)
+      } else {
+        fetchUserBookings()
+        if (canceled) {
+          toast.error('Payment canceled')
+          navigate('/my-bookings', { replace: true })
+        }
+      }
+    }
+  }, [user, searchParams, navigate])
 
   return (
     <div className='py-28 md:pb-35 md:pt-32 px-4 md:px-16 lg:px-24 xl:px-32'>

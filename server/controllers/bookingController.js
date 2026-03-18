@@ -166,8 +166,8 @@ const line_items = [
 ];
 const session=await stripeInstance.checkout.sessions.create({line_items,
     mode:"payment",
-    success_url:`${origin}/loader/my-bookings`,
-    cancel_url:`${origin}/loader/my-bookings`,
+    success_url:`${origin}/my-bookings?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url:`${origin}/my-bookings?canceled=1`,
     metadata:{
         bookingId,
     }
@@ -176,4 +176,40 @@ res.json({success:true,url:session.url})
 }catch(error){
 res.json({success:false,message:"payment failed"})
 }
+}
+
+export const stripeSuccess = async (req, res) => {
+    try {
+        const { session_id } = req.query;
+        if (!session_id) {
+            return res.json({ success: false, message: "missing session id" });
+        }
+
+        const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
+        const session = await stripeInstance.checkout.sessions.retrieve(session_id);
+
+        if (session.payment_status !== "paid") {
+            return res.json({ success: false, message: "payment not completed" });
+        }
+
+        const bookingId = session.metadata?.bookingId;
+        if (!bookingId) {
+            return res.json({ success: false, message: "missing booking id" });
+        }
+
+        const booking = await Booking.findById(bookingId);
+        if (!booking) {
+            return res.json({ success: false, message: "booking not found" });
+        }
+
+        if (!booking.isPaid) {
+            booking.isPaid = true;
+            booking.paidAt = new Date();
+            await booking.save();
+        }
+
+        res.json({ success: true, message: "payment verified" });
+    } catch (error) {
+        res.json({ success: false, message: error.message || "payment verification failed" });
+    }
 }

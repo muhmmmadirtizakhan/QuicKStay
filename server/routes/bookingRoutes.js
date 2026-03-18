@@ -5,7 +5,8 @@ import {
   createBooking, 
   getHotelBookings, 
   getUserBookings, 
-  stringPayment
+  stringPayment,
+  stripeSuccess
 } from "../controllers/bookingController.js"  // ✅ specific file with .js
 
 const bookingRouter = express.Router();
@@ -15,4 +16,5 @@ bookingRouter.post('/book', protect, createBooking);
 bookingRouter.get('/user', protect, getUserBookings);
 bookingRouter.get('/hotel', protect, getHotelBookings);  // ✅ './hotel' nahi, '/hotel'
 bookingRouter.post('/stripe-payment',protect,stringPayment)
+bookingRouter.get('/stripe-success', protect, stripeSuccess)
 export default bookingRouter;
