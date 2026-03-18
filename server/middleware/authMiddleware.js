@@ -1,7 +1,8 @@
 import User from "../models/User.js";
 
 export const protect = async (req, res, next) => {
-    const { userId } = req.auth();
+    const authData = typeof req.auth === 'function' ? req.auth() : req.auth;
+    const userId = authData?.userId;
     
     if (!userId) {
         return res.json({ success: false, message: "not authenticated" });
