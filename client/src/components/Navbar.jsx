@@ -51,7 +51,7 @@ setIsScrolled(prev=>location.pathname!=='/' ? true : prev);
         const destination = searchValue.trim();
         setIsSearching(true);
         try {
-            if (user) {
+            if (user && typeof getToken === 'function' && axios?.post) {
                 const token = await getToken();
                 await axios.post('/api/user/store-recent-search',
                     { recentSearchedCity: destination },
@@ -61,7 +61,11 @@ setIsScrolled(prev=>location.pathname!=='/' ? true : prev);
         } catch (error) {
             // silent fail, still navigate
         } finally {
-            navigate(`/rooms?destination=${encodeURIComponent(destination)}`);
+            if (typeof navigate === 'function') {
+                navigate(`/rooms?destination=${encodeURIComponent(destination)}`);
+            } else {
+                window.location.href = `/rooms?destination=${encodeURIComponent(destination)}`;
+            }
             setIsMenuOpen(false);
             setIsSearching(false);
         }
