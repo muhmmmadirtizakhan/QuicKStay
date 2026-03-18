@@ -28,6 +28,8 @@ app.use('/api/bookings', bookingRouter);
 app.use('/api/newsletter', newsletterRouter);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`SERVER RUNNING ON PORT ${PORT}`));
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => console.log(`SERVER RUNNING ON PORT ${PORT}`));
+}
 
 export default app;
