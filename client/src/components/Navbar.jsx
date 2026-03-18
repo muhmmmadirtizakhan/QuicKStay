@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { assets } from '../assets/assets';
-import { useClerk, useUser, UserButton } from '@clerk/clerk-react';
-
+import { useClerk, UserButton } from '@clerk/clerk-react';
+import {useAppContext} from '../context/AppContext'
+import { toast } from 'react-hot-toast';
 const Navbar = () => {
     const navLinks = [
         { name: 'Home', path: '/' },
@@ -12,11 +13,12 @@ const Navbar = () => {
     ];
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [searchValue, setSearchValue] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
     
     const { openSignIn } = useClerk();
-    const { user } = useUser();
-    const navigate = useNavigate();
-
+const {user,navigate,isOwner,setShowHotelReg,axios,getToken}=useAppContext();
+const location = useLocation();
 useEffect(() => {
 if(location.pathname!=='/'){
 setIsScrolled(true);
@@ -37,6 +39,31 @@ setIsScrolled(prev=>location.pathname!=='/' ? true : prev);
             openSignIn();
         } else {
             console.error("openSignIn is not available");
+        }
+    };
+
+    const handleSearch = async (e) => {
+        e.preventDefault();
+        if (!searchValue.trim()) {
+            toast.error('Enter a destination to search');
+            return;
+        }
+        const destination = searchValue.trim();
+        setIsSearching(true);
+        try {
+            if (user) {
+                const token = await getToken();
+                await axios.post('/api/user/store-recent-search',
+                    { recentSearchedCity: destination },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+            }
+        } catch (error) {
+            // silent fail, still navigate
+        } finally {
+            navigate(`/rooms?destination=${encodeURIComponent(destination)}`);
+            setIsMenuOpen(false);
+            setIsSearching(false);
         }
     };
 
@@ -69,15 +96,33 @@ setIsScrolled(prev=>location.pathname!=='/' ? true : prev);
                     </Link>
                 ))}
                 {user && (
-                    <button className={`border px-4 py-1 text-sm font-light rounded-full cursor-pointer ${isScrolled ? 'text-black' : 'text-white'} transition-all`}>
-                        Dashboard
+                    <button className={`border px-4 py-1 text-sm font-light rounded-full cursor-pointer ${isScrolled ? 'text-black' : 'text-white'} transition-all`} onClick={()=>isOwner ? navigate('/owner') :setShowHotelReg(true)}>
+                        {isOwner ? 'Dashboard' :'list your hotel'} 
                     </button>
                 )}
             </div>
 
             {/* Desktop Right */}
             <div className="hidden md:flex items-center gap-4">
-                <img src={assets.searchIcon} alt="search" className={`${isScrolled && 'invert'} h-7 transition-all duration-500`} />
+                <form onSubmit={handleSearch} className="flex items-center gap-2">
+                    <input
+                        type="text"
+                        value={searchValue}
+                        onChange={(e) => setSearchValue(e.target.value)}
+                        placeholder="Search destination"
+                        className={`h-9 px-3 rounded-full border border-gray-300 outline-none text-sm ${
+                            isScrolled ? "bg-white text-gray-800" : "bg-white/90 text-gray-800"
+                        }`}
+                    />
+                    <button
+                        type="submit"
+                        disabled={isSearching}
+                        className="p-2 rounded-full hover:bg-gray-100 transition disabled:opacity-60"
+                        title="Search"
+                    >
+                        <img src={assets.searchIcon} alt="search" className="h-5" />
+                    </button>
+                </form>
                 
                 {user ? (
                     <UserButton afterSignOutUrl="/">
@@ -135,6 +180,23 @@ setIsScrolled(prev=>location.pathname!=='/' ? true : prev);
 
                 {/* Menu Items - Top se start, NO My Bookings here */}
                 <div className="flex flex-col items-start gap-6 pt-20 px-8">
+                    <form onSubmit={handleSearch} className="flex items-center gap-2 w-full">
+                        <input
+                            type="text"
+                            value={searchValue}
+                            onChange={(e) => setSearchValue(e.target.value)}
+                            placeholder="Search destination"
+                            className="h-10 px-3 rounded-full border border-gray-300 outline-none text-sm w-full"
+                        />
+                        <button
+                            type="submit"
+                            disabled={isSearching}
+                            className="p-2 rounded-full hover:bg-gray-100 transition disabled:opacity-60"
+                            title="Search"
+                        >
+                            <img src={assets.searchIcon} alt="search" className="h-5" />
+                        </button>
+                    </form>
                     {navLinks.map((link, i) => (
                         <Link 
                             key={i} 
@@ -147,15 +209,13 @@ setIsScrolled(prev=>location.pathname!=='/' ? true : prev);
                     ))}
 
                     {/* Dashboard Button */}
-                    {user && (
-                        <button 
-                            onClick={() => {
-                                // Handle dashboard click
-                                setIsMenuOpen(false);
-                            }} 
+        {user && (
+            <button 
+onClick={() =>isOwner ? navigate('/owner'):setShowHotelReg(true)                            
+                            }
                             className="border px-4 py-1 text-sm font-light rounded-full cursor-pointer transition-all mt-2"
                         >
-                            Dashboard
+                           {isOwner ? 'dashbaord' :'list your hotel'}
                         </button>
                     )}
 

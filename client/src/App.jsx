@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -10,15 +10,40 @@ import HotelReg from './components/HotelReg';
 import Layout from './pages/hotelOwner/Layout';
 import Dashboard from './pages/hotelOwner/Dashboard';  // {} hatao
 import AddRoom from './pages/hotelOwner/AddRoom';      // {} hatao
-import ListRoom from './pages/hotelOwner/ListRoom';    // {} hatao
-
+import ListRoom from './pages/hotelOwner/ListRoom'; 
+import {Toaster} from 'react-hot-toast'   // {} hatao
+import { useAppContext } from './context/AppContext';
+import { toast } from 'react-hot-toast';
 const App = () => {
-  const isOwnerPath = useLocation().pathname.includes("owner"); 
-  
+  const location = useLocation();
+  const isOwnerPath = location.pathname.includes("owner"); 
+  const { showHotelReg, axios } = useAppContext();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const token = params.get('newsletter_verify');
+    if (!token) return;
+
+    const verify = async () => {
+      try {
+        const { data } = await axios.get(`/api/newsletter/verify?token=${token}`);
+        if (data.success) {
+          toast.success(data.message);
+        } else {
+          toast.error(data.message || 'Verification failed');
+        }
+      } catch (error) {
+        toast.error(error.response?.data?.message || error.message);
+      }
+    };
+
+    verify();
+  }, [location.search, axios]);
   return (
     <div>
+      <Toaster/>
       {!isOwnerPath && <Navbar />}
-      {false && <HotelReg />}
+      {showHotelReg && <HotelReg />}
       <div className='min-h-[78vh]'>
         <Routes>
           <Route path="/" element={<Home />} />

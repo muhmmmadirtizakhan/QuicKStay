@@ -66,6 +66,11 @@ export const assets = {
     closeMenu,
     guestsIcon,
     regImage,
+    roomImg1,
+    roomImg2,
+    roomImg3,
+    roomImg4,
+    placeholder: roomImg1,
     addIcon,
     dashboardIcon,
     listIcon,
@@ -98,8 +103,10 @@ export const testimonials = [
 // Facility Icon
 export const facilityIcons = {
     "Free WiFi": assets.freeWifiIcon,
+    "Free Wifi": assets.freeWifiIcon,
     "Free Breakfast": assets.freeBreakfastIcon,
     "Room Service": assets.roomServiceIcon,
+    "Room service": assets.roomServiceIcon,
     "Mountain View": assets.mountainIcon,
     "Pool Access": assets.poolIcon,
 };

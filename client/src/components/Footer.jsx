@@ -1,6 +1,33 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { assets } from '../assets/assets'
+import { useAppContext } from '../context/AppContext'
+import { toast } from 'react-hot-toast'
 const Footer = () => {
+  const { axios } = useAppContext();
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubscribe = async () => {
+    if (!email || !email.includes('@')) {
+      toast.error('Please enter a valid email');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data } = await axios.post('/api/newsletter/subscribe', { email });
+      if (data.success) {
+        toast.success(data.message);
+        setEmail('');
+      } else {
+        toast.error(data.message || 'Failed to subscribe');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-[#f6f9fc] text-gray-500/80 pt-8 px-6 md:px-16 lg:px-24 xl:px-32">
             <div className='flex flex-wrap justify-between gap-12 md:gap-6'>
@@ -45,8 +72,18 @@ const Footer = () => {
                         Subscribe to our newsletter for inspiration and special offers.
                     </p>
                     <div className='flex items-center mt-4'>
-                        <input type="text" className='bg-white rounded-l border border-gray-300 h-9 px-3 outline-none' placeholder='Your email' />
-                        <button className='flex items-center justify-center bg-black h-9 w-9 aspect-square rounded-r'>
+                        <input
+                            type="email"
+                            className='bg-white rounded-l border border-gray-300 h-9 px-3 outline-none'
+                            placeholder='Your email'
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                        />
+                        <button
+                            onClick={handleSubscribe}
+                            disabled={loading}
+                            className='flex items-center justify-center bg-black h-9 w-9 aspect-square rounded-r disabled:opacity-60'
+                        >
                             {/* Arrow icon */}
                      <img src={assets.arrowIcon} alt="Arrow-icon" className="w-3.5 invert" />
                         </button>
