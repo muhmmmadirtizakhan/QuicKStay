@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from 'react'
 import Title from '../components/Title'
 import { assets } from '../assets/assets'
-import { useAppContext } from '../context/AppContext'  // ✅ Missing import
-import { toast } from 'react-hot-toast'  // ✅ Missing import
+import { useAppContext } from '../context/AppContext'
+import { toast } from 'react-hot-toast'
 import { getRotatingImage } from '../utils/imageShuffle'
 import { getProfessionalAddress } from '../utils/addressMap'
 
 const MyBookings = () => {
-  const { axios, getToken, user } = useAppContext();  // ✅ Fixed spelling
+  const { axios, getToken, user } = useAppContext();
   const [bookings, setBookings] = useState([])
   
   const fetchUserBookings = async () => {
     try {
-      // ✅ Fixed: axios.get was written as .get
+      const token = await getToken(); // ✅ Token pehle fetch karo
       const { data } = await axios.get('/api/bookings/user', {
-        headers: { Authorization: `Bearer ${await getToken()}` }  // ✅ Fixed headers object
+        headers: { Authorization: `Bearer ${token}` }
       })
       
       if (data.success) {
@@ -28,33 +28,34 @@ const MyBookings = () => {
       toast.error(error.response?.data?.message || error.message)
     }
   }
-  
+
+  // ✅ Sirf ek handlePayment function rakho (duplicate hataya)
+  const handlePayment = async (bookingId) => {
+    try {
+      const token = await getToken();
+      
+      // ❌ Issue: {bookingId,{headers...}} - ye syntax galat tha
+      // ✅ Fixed: Proper object structure
+      const { data } = await axios.post('/api/bookings/stripe-payment', 
+        { bookingId },  // ✅ Body alag
+        { headers: { Authorization: `Bearer ${token}` } }  // ✅ Headers alag
+      )
+      
+      if (data.success) {
+        window.location.href = data.url;  // ✅ Redirect to Stripe
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }
+
   useEffect(() => {
     if (user) {
       fetchUserBookings()
     }
   }, [user])
-
-  // ✅ Handle payment
-  const handlePayment = async (bookingId) => {
-    try {
-      const token = await getToken();
-      const { data } = await axios.post('/api/bookings/pay', 
-        { bookingId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      
-      if (data.success) {
-        toast.success('Payment successful!')
-        fetchUserBookings() // Refresh bookings
-      } else {
-        toast.error(data.message)
-      }
-    } catch (error) {
-      console.error('Payment error:', error)
-      toast.error(error.response?.data?.message || error.message)
-    }
-  }
 
   return (
     <div className='py-28 md:pb-35 md:pt-32 px-4 md:px-16 lg:px-24 xl:px-32'>
@@ -93,8 +94,8 @@ const MyBookings = () => {
                   return (
                     <img 
                       src={displayImage} 
-                  alt="hotel-img" 
-                  className='min-md:w-44 rounded shadow object-cover h-32 w-32' 
+                      alt="hotel-img" 
+                      className='min-md:w-44 rounded shadow object-cover h-32 w-32' 
                     />
                   );
                 })()}
