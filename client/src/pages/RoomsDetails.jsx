@@ -86,7 +86,6 @@ const RoomsDetails = () => {
     }
   };
 
-  // ✅ SCREENSHOT WALA onSubmitHandler EXACTLY
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     
@@ -199,10 +198,11 @@ const RoomsDetails = () => {
         <p className='text-2xl font-medium'>${room.pricePerNight}/night</p>
       </div>
 
-      {/* Booking Form - NOW USING onSubmitHandler */}
+      {/* Booking Form - FIXED MOBILE GUESTS INPUT */}
       <form onSubmit={onSubmitHandler} className='flex flex-col md:flex-row items-start md:items-center justify-between bg-white shadow-[0px_0px_20px_rgba(0,0,0,0.15)] p-6 rounded-xl mx-auto mt-16 max-w-6xl'>
-        <div className='flex flex-col flex-wrap md:flex-row items-start md:items-center gap-4 md:gap-10 text-gray-500'>
-          <div className='flex flex-col'>
+        <div className='flex flex-col flex-wrap md:flex-row items-start md:items-center gap-4 md:gap-10 text-gray-500 w-full'>
+          {/* Check-In Date */}
+          <div className='flex flex-col w-full md:w-auto'>
             <label htmlFor="checkInDate" className='font-medium'>Check-In</label>
             <input 
               type="date" 
@@ -210,11 +210,13 @@ const RoomsDetails = () => {
               value={checkInDate}
               onChange={(e) => setCheckInDate(e.target.value)}
               min={new Date().toISOString().split('T')[0]}
-              className='w-full rounded border border-gray-300 px-3 py-2 mt-1.5 outline-none' 
+              className='w-full md:w-40 rounded border border-gray-300 px-3 py-2 mt-1.5 outline-none' 
               required
             />
           </div>
-          <div className='flex flex-col'>
+          
+          {/* Check-Out Date */}
+          <div className='flex flex-col w-full md:w-auto'>
             <label htmlFor="checkOutDate" className='font-medium'>Check-Out</label>
             <input 
               type="date" 
@@ -223,31 +225,48 @@ const RoomsDetails = () => {
               min={checkInDate} 
               disabled={!checkInDate}
               onChange={(e) => setCheckOutDate(e.target.value)}
-              className='w-full rounded border border-gray-300 px-3 py-2 mt-1.5 outline-none' 
+              className='w-full md:w-40 rounded border border-gray-300 px-3 py-2 mt-1.5 outline-none' 
               required
             />
           </div>
-          <div className='flex flex-col'>
+          
+          {/* ✅ FIXED: Mobile-friendly Guests Input with +/- buttons */}
+          <div className='flex flex-col w-full md:w-auto'>
             <label htmlFor="guests" className='font-medium'>Guests</label>
-            <input 
-              type="number" 
-              id='guests' 
-              value={guests}
-              onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
-              min="1" 
-              max="10"
-              className='max-w-20 rounded border border-gray-300 px-3 py-2 mt-1.5 outline-none' 
-              required
-              placeholder='1'
-            />
+            <div className='flex items-center mt-1.5'>
+              <button 
+                type="button"
+                onClick={() => setGuests(prev => Math.max(1, prev - 1))}
+                className='px-4 py-2 bg-gray-100 border border-gray-300 rounded-l-md text-lg font-bold hover:bg-gray-200'
+              >
+                -
+              </button>
+              <input 
+                type="number" 
+                id='guests' 
+                value={guests}
+                onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
+                min="1" 
+                max="10"
+                className='w-16 text-center border-y border-gray-300 px-2 py-2 outline-none'
+                required
+              />
+              <button 
+                type="button"
+                onClick={() => setGuests(prev => Math.min(10, prev + 1))}
+                className='px-4 py-2 bg-gray-100 border border-gray-300 rounded-r-md text-lg font-bold hover:bg-gray-200'
+              >
+                +
+              </button>
+            </div>
           </div>
         </div>
         
-        {/* Screenshot wala button */}
+        {/* Submit Button */}
         <button 
           type="submit"
           disabled={loading}
-          className='bg-primary hover:bg-primary-dull active:scale-95 transition-all text-white rounded-md max-md:w-full max-md:mt-6 md:px-25 py-3 md:py-4 text-base cursor-pointer disabled:opacity-50'
+          className='bg-primary hover:bg-primary-dull active:scale-95 transition-all text-white rounded-md w-full md:w-auto max-md:mt-6 md:px-25 py-3 md:py-4 text-base cursor-pointer disabled:opacity-50'
         >
           {loading ? "Processing..." : isAvailable ? "Book Now" : "Check Availability"}
         </button>
