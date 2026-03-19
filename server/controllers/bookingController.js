@@ -2,7 +2,8 @@ import Booking from "../models/Booking.js";
 import Room from "../models/Room.js";
 import Hotel from "../models/Hotel.js";
 import transporter from "../configs/nodemailer.js";
-import stripe from "stripe";
+import Stripe from "stripe";  // ✅ Fixed: 'stripe' → 'Stripe' (capital S)
+
 const checkAvailability = async (checkInDate, checkOutDate, room) => {
     try {
         const bookings = await Booking.find({
@@ -42,6 +43,12 @@ export const createBooking = async (req, res) => {
         }
         
         const roomData = await Room.findById(room).populate("hotel");
+        
+        // ✅ Check if room exists
+        if (!roomData) {
+            return res.json({ success: false, message: "Room not found" });
+        }
+        
         let totalPrice = roomData.pricePerNight;
         
         const checkIn = new Date(checkInDate);
@@ -62,7 +69,6 @@ export const createBooking = async (req, res) => {
             totalPrice,
         });
         
-        // ✅ FIXED: Email template syntax
         const mailOptions = {
             from: process.env.SENDER_EMAIL,
             to: req.user.email,
@@ -143,39 +149,56 @@ export const getHotelBookings = async (req, res) => {
     }
 };
 
-export const stringPayment=async(req,res)=>{
-try{
-const{bookingId}=req.body;
-const booking=await Booking.findById(bookingId);
-const roomData=await Room.findById(booking.room).populate('hotel')
-const totalPrice=booking.totalPrice;
-const {origin}=req.headers;
- const stripeInstance=new stripe(process.env.STRIPE_SECRET_KEY);
-const line_items = [
-    {
-        price_data: {
-            currency: "usd",
-            product_data: {
-                name: roomData.hotel.name,
-                // ✅ comma missing tha yahan
-            },
-            unit_amount: totalPrice * 100, // ✅ semicolon (;) ki jagah comma (,) hona chahiye
-        },
-        quantity: 1,
+// ✅ FIXED: stringPayment → stripePayment
+export const stripePayment = async (req, res) => {
+    try {
+        const { bookingId } = req.body;
+        const booking = await Booking.findById(bookingId);
+        
+        if (!booking) {
+            return res.json({ success: false, message: "Booking not found" });
+        }
+        
+        const roomData = await Room.findById(booking.room).populate('hotel');
+        
+        if (!roomData || !roomData.hotel) {
+            return res.json({ success: false, message: "Room or hotel not found" });
+        }
+        
+        const totalPrice = booking.totalPrice;
+        const { origin } = req.headers;
+        
+        const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);  // ✅ Fixed: stripe → Stripe
+        
+        const line_items = [
+            {
+                price_data: {
+                    currency: "usd",
+                    product_data: {
+                        name: roomData.hotel.name,  // ✅ Name properly set
+                        description: `${roomData.roomType || 'Room'} at ${roomData.hotel.name}`
+                    },
+                    unit_amount: totalPrice * 100,  // ✅ Comma (,) not semicolon (;)
+                },
+                quantity: 1,
+            }
+        ];
+        
+        const session = await stripeInstance.checkout.sessions.create({
+            line_items,
+            mode: "payment",
+            success_url: `${origin}/my-bookings?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${origin}/my-bookings?canceled=1`,
+            metadata: {
+                bookingId,
+            }
+        });
+        
+        res.json({ success: true, url: session.url });
+    } catch (error) {
+        console.log("Stripe payment error:", error);
+        res.json({ success: false, message: error.message || "payment failed" });
     }
-];
-const session=await stripeInstance.checkout.sessions.create({line_items,
-    mode:"payment",
-    success_url:`${origin}/my-bookings?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url:`${origin}/my-bookings?canceled=1`,
-    metadata:{
-        bookingId,
-    }
-})
-res.json({success:true,url:session.url})
-}catch(error){
-res.json({success:false,message:"payment failed"})
-}
 }
 
 export const stripeSuccess = async (req, res) => {
@@ -185,7 +208,7 @@ export const stripeSuccess = async (req, res) => {
             return res.json({ success: false, message: "missing session id" });
         }
 
-        const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
+        const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);  // ✅ Fixed: stripe → Stripe
         const session = await stripeInstance.checkout.sessions.retrieve(session_id);
 
         if (session.payment_status !== "paid") {
@@ -210,6 +233,7 @@ export const stripeSuccess = async (req, res) => {
 
         res.json({ success: true, message: "payment verified" });
     } catch (error) {
+        console.log("Stripe success error:", error);
         res.json({ success: false, message: error.message || "payment verification failed" });
     }
 }
