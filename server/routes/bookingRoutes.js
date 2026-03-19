@@ -5,7 +5,7 @@ import {
   createBooking, 
   getHotelBookings, 
   getUserBookings, 
-  stringPayment,
+  stripePayment,      // ✅ FIXED: stringPayment → stripePayment
   stripeSuccess
 } from "../controllers/bookingController.js"  // ✅ specific file with .js
 
@@ -15,6 +15,7 @@ bookingRouter.post('/check-availability', checkAvailabilityAPI);
 bookingRouter.post('/book', protect, createBooking);
 bookingRouter.get('/user', protect, getUserBookings);
 bookingRouter.get('/hotel', protect, getHotelBookings);  // ✅ './hotel' nahi, '/hotel'
-bookingRouter.post('/stripe-payment',protect,stringPayment)
-bookingRouter.get('/stripe-success', protect, stripeSuccess)
+bookingRouter.post('/stripe-payment', protect, stripePayment);  // ✅ FIXED
+bookingRouter.get('/stripe-success', protect, stripeSuccess);
+
 export default bookingRouter;
