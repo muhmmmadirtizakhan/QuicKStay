@@ -44,7 +44,6 @@ export const createBooking = async (req, res) => {
         
         const roomData = await Room.findById(room).populate("hotel");
         
-        // ✅ Check if room exists
         if (!roomData) {
             return res.json({ success: false, message: "Room not found" });
         }
@@ -88,16 +87,19 @@ export const createBooking = async (req, res) => {
             `
         };
         
-        await transporter.sendMail(mailOptions);
+        try {
+            await transporter.sendMail(mailOptions);
+        } catch (emailError) {
+            console.log("Email failed but booking succeeded:", emailError.message);
+        }
         
-        res.json({ success: true, message: "BOOKING CREATED SUCCESSFULLY" });
+        res.json({ success: true, message: "BOOKING CREATED SUCCESSFULLY", booking });
 
     } catch (error) {
         console.log(error.message);
         res.json({ success: false, message: "failed to create booking" });
     }
 };
-
 export const getUserBookings = async (req, res) => {
     try {
         const authUserId = req.auth?.()?.userId;
